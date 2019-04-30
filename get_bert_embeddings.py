@@ -163,12 +163,12 @@ def get_all_embeddings(input_df):
     Version of transform that returns full list of embeddings
 
     Returns:
-        Generator[Tuple(list, list, np.array)]:
-            - The first element is a list of tokens
-            - the second element is a three-tuple:
-                (pronoun_index, A_indexes, B_indexes)
-                in most cases, A_indexes and B_indexes is a list of len 1
-            - the third one is a numpy array of <number of tokens> x 768 floats
+        pd.Dataframe: columns:
+            'tokens': list of tokens (strings)
+            'embeddings': len(tokens) x 768 numpy array of floats
+            'Pronoun-offset': index of the pronoun in the tokens
+            'A-offsets': list of A offsets in the tokens
+            'B-offsets': list of B offsets in the tokens
     """
     df = input_df.reset_index()
     sequences = df['Text']
