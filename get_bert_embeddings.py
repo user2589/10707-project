@@ -166,14 +166,24 @@ def transform(input_df):
 
     # I'm not sure if it is safe to assume embeddings will come in order,
     # so thhere are few steps to make sure
-    for embedding in bert_embeddings(sequences, layer_indexes=(-1,)):
+    # Also, note that we need more than 256 tokens
+    # because of punctuation and quotes
+    for embedding in bert_embeddings(
+            sequences, layer_indexes=(-1,), max_seq_length=384):
         # we don't need linex_id since samples are in order anyway
         idx = embedding['linex_index']
         sequence = sequences[idx]
         features = embedding['features']
         tokens = [t['token'] for t in features]
-        pronoun_idx = get_token_index(
-            sequence, df.loc[idx, 'Pronoun-offset'], tokens)
+        try:
+            pronoun_idx = get_token_index(
+                sequence, df.loc[idx, 'Pronoun-offset'], tokens)
+        except:
+            print(sequences.loc[idx])
+            print(df.loc[idx, 'Pronoun-offset'])
+            print(tokens)
+            raise
+
         pronoun_embed = features[pronoun_idx]['layers'][0]['values']
 
         a = df.loc[idx, 'A'].lower()

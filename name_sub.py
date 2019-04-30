@@ -51,18 +51,25 @@ def replace(text, search, repl, *indexes):
 
 
 def transform(row):
-    text, po, ao, bo = \
-        replace(row['Text'], '--', '-', row['Pronoun-offset'], row['A-offset'], row['B-offset'])
-    text, po, ao, bo = replace(text, '**', '*', po, ao, bo)
+    text, po, ao, bo = row['Text'], row['Pronoun-offset'], row['A-offset'], row['B-offset']
     for a_repl, b_repl in GENDER2NAME[PRONOUN2GENDER[row['Pronoun'].lower()]]:
         if a_repl in text or b_repl in text:
             continue
-        text, po, ao, bo = replace(text, row['A'], a_repl, po, ao, bo)
-        text, po, ao, bo = replace(text, row['B'], b_repl, po, ao, bo)
         new_row = row.copy()
+        s = sorted((
+            (row['A'], 'A', a_repl), (row['B'], 'B', b_repl)),
+            key=lambda x: -len(x[0]))
+        # sometimes A is part of B or vice versa.
+        # So, we need to replace the longest first
+        for search, key, repl in s:
+            text, po, ao, bo = replace(text, search, repl, po, ao, bo)
+            new_row[key] = repl
+
+        for search, repl in (('#', ''), ('`', ''), ('"', ''), ('*', ''),
+                             ("--", "-"), (" '", " "), ("' ", " ")):
+            text, po, ao, bo = replace(text, search, repl, po, ao, bo)
+
         new_row['Text'] = text
-        new_row['A'] = a_repl
-        new_row['B'] = b_repl
         new_row['Pronoun-offset'] = po
         new_row['A-offset'] = ao
         new_row['B-offset'] = bo
