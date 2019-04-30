@@ -158,8 +158,52 @@ def commalist(l):
     return ','.join(str(el) for el in l)
 
 
+def get_all_embeddings(input_df):
+    """
+    Version of transform that returns full list of embeddings
+
+    Returns:
+        Generator[Tuple(list, list, np.array)]:
+            - The first element is a list of tokens
+            - the second element is a three-tuple:
+                (pronoun_index, A_indexes, B_indexes)
+                in most cases, A_indexes and B_indexes is a list of len 1
+            - the third one is a numpy array of <number of tokens> x 768 floats
+    """
+    df = input_df.reset_index()
+    sequences = df['Text']
+    output = pd.DataFrame(
+        None, index=df.index,
+        columns=('tokens', 'embeddings',
+                 'Pronoun-offset', 'A-offsets', 'B-offsets'))
+
+    for embedding in bert_embeddings(
+            sequences, layer_indexes=(-1,), max_seq_length=384):
+        idx = embedding['linex_index']
+        sequence = sequences[idx]
+        features = embedding['features']
+        tokens = [t['token'] for t in features]
+        pronoun_idx = get_token_index(
+            sequence, df.loc[idx, 'Pronoun-offset'], tokens)
+        a = df.loc[idx, 'A'].lower()
+        b = df.loc[idx, 'B'].lower()
+        a_indexes = [i for i, token in enumerate(tokens) if token == a]
+        b_indexes = [i for i, token in enumerate(tokens) if token == b]
+        embeddings = np.array([t['layers'][0]['values'] for t in features])
+
+        output.loc[idx] = {
+            'tokens': tokens,
+            'embeddings': embeddings,
+            'Pronoun-offset': pronoun_idx,
+            'A-offsets': a_indexes,
+            'B-offsets': b_indexes
+        }
+
+    return output
+
+
 def transform(input_df):
-    df = input_df.copy().reset_index()
+    df = input_df.reset_index()
     sequences = df['Text']
     output = pd.DataFrame(None, index=df.index,
                           columns=('Pronoun', 'A', 'B', 'A_avg', 'B_avg'))
@@ -170,7 +214,6 @@ def transform(input_df):
     # because of punctuation and quotes
     for embedding in bert_embeddings(
             sequences, layer_indexes=(-1,), max_seq_length=384):
-        # we don't need linex_id since samples are in order anyway
         idx = embedding['linex_index']
         sequence = sequences[idx]
         features = embedding['features']
