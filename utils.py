@@ -30,5 +30,5 @@ def accuracy(labels):
     right_answers = get_train_labels()
     n = len(labels)
     one_hot = np.zeros(right_answers.shape)
-    one_hot[np.arange(n), np.argmax(labels)] = 1
+    one_hot[np.arange(n), np.argmax(labels, axis=1)] = 1
     return (one_hot * right_answers).sum() / n

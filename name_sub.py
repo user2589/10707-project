@@ -19,17 +19,30 @@ GENDER2NAME = {
         ('Mary', 'Alice'),
         ('Mary', 'Elizabeth'),
         ('Mary', 'Kate'),
+        ('Mary', 'Emma'),
+        ('Mary', 'Olivia'),
         ('Alice', 'Elizabeth'),
         ('Alice', 'Kate'),
+        ('Alice', 'Emma'),
+        ('Alice', 'Olivia'),
         ('Kate', 'Elizabeth'),
+        ('Kate', 'Emma'),
+        ('Kate', 'Olivia'),
+        ('Elizabeth', 'Emma'),
+        ('Elizabeth', 'Olivia'),
+        ('Emma', 'Olivia'),
     ),
     'male': (
         ('John', 'Michael'),
         ('John', 'Henry'),
         ('John', 'James'),
+        ('John', 'David'),
         ('Michael', 'Henry'),
         ('Michael', 'James'),
-        ('Henry', 'James')
+        ('Michael', 'David'),
+        ('Henry', 'James'),
+        ('Henry', 'David'),
+        ('James', 'David'),
     )
 }
 
@@ -53,8 +66,11 @@ def replace(text, search, repl, *indexes):
 def transform(row):
     text, po, ao, bo = row['Text'], row['Pronoun-offset'], row['A-offset'], row['B-offset']
     for a_repl, b_repl in GENDER2NAME[PRONOUN2GENDER[row['Pronoun'].lower()]]:
-        if a_repl in text or b_repl in text:
+        if a_repl in text or b_repl in text \
+                or row['A'] in a_repl or row['B'] in b_repl\
+                or row['A'] in b_repl or row['B'] in a_repl:
             continue
+
         new_row = row.copy()
         s = sorted((
             (row['A'], 'A', a_repl), (row['B'], 'B', b_repl)),
@@ -66,8 +82,12 @@ def transform(row):
             new_row[key] = repl
 
         for search, repl in (('#', ''), ('`', ''), ('"', ''), ('*', ''),
-                             ("--", "-"), (" '", " "), ("' ", " ")):
+                             ("--", "-"),
+                             ("'''", ""), ("''", ""), (" '", " "), ("' ", " ")):
             text, po, ao, bo = replace(text, search, repl, po, ao, bo)
+
+        # sanity check:
+        assert a_repl in text and b_repl in text
 
         new_row['Text'] = text
         new_row['Pronoun-offset'] = po

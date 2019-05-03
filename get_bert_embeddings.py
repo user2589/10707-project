@@ -45,7 +45,7 @@ def bert_embeddings(
                             'values': list of values, length is up to the model.
             }
     """
-    models_dir = 'models'
+    models_dir = 'bert_models'
     assert model in ('uncased_L-12_H-768_A-12', 'cased_L-12_H-768_A-12',
                      'uncased_L-24_H-1024_A-16'), "Unknown BERT model"
     model_path = os.path.join(models_dir, model)
